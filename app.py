@@ -4,7 +4,7 @@ from email.quoprimime import unquote
 import os
 import random
 import re, bson, bcrypt
-from flask import Flask, current_app, make_response, request, jsonify, send_from_directory
+from flask import Flask, current_app, logging, make_response, request, jsonify, send_from_directory
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from pymongo import ASCENDING, MongoClient
@@ -21,6 +21,8 @@ CORS(app, origins=["http://localhost:4200"])
 app.config['SECRET_KEY'] = 'COM668'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)  # Expiration time
 
+# Enable logging
+app.logger.setLevel(logging.DEBUG)
 
 # MongoDB connection settings
 # client = MongoClient("mongodb://localhost:27017")
@@ -2052,4 +2054,4 @@ def update_exam_details(exam_id):
         return jsonify({"error": "Unable to update exam", "details": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
