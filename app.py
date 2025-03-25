@@ -17,7 +17,7 @@ from werkzeug.security import generate_password_hash
 from urllib.parse import unquote
 
 app = Flask(__name__)
-CORS(app)  
+CORS(app, origins=["http://localhost:4200"])
 app.config['SECRET_KEY'] = 'COM668'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)  # Expiration time
 
