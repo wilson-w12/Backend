@@ -4,7 +4,8 @@ from email.quoprimime import unquote
 import os
 import random
 import re, bson, bcrypt
-from flask import Flask, current_app, logging, make_response, request, jsonify, send_from_directory
+import logging
+from flask import Flask, current_app, make_response, request, jsonify, send_from_directory
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from pymongo import ASCENDING, MongoClient
@@ -21,8 +22,8 @@ CORS(app, origins=["http://localhost:4200"])
 app.config['SECRET_KEY'] = 'COM668'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)  # Expiration time
 
-# Enable logging
-app.logger.setLevel(logging.DEBUG)
+# Enable logging using Python's built-in logging module
+logging.basicConfig(level=logging.DEBUG)
 
 # MongoDB connection settings
 # client = MongoClient("mongodb://localhost:27017")
@@ -102,6 +103,7 @@ def admin_or_self_required(func):
 # Login 
 @app.route('/api/login', methods=['POST'])
 def login():
+    app.logger.debug('Login request received')  
     # Get email and password
     email = request.form.get('email')
     password = request.form.get('password')
