@@ -1,6 +1,7 @@
 import datetime
 from datetime import datetime, timedelta, UTC, timezone  
 from email.quoprimime import unquote
+import os
 import random
 import re, bson, bcrypt
 from flask import Flask, current_app, make_response, request, jsonify, send_from_directory
@@ -22,7 +23,8 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)  # Expiration time
 
 
 # MongoDB connection settings
-client = MongoClient("mongodb://localhost:27017")
+# client = MongoClient("mongodb://localhost:27017")
+client = MongoClient("mongodb+srv://wilsonw12:14Ts5mW4bs7H6dWO@com668class.nre7q.mongodb.net/?retryWrites=true&w=majority&appName=Com668CLASS")
 db = client["COM668Coursework"]
 teacher_collection = db["teachers"]
 student_collection = db["students"]
@@ -2050,4 +2052,4 @@ def update_exam_details(exam_id):
         return jsonify({"error": "Unable to update exam", "details": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
