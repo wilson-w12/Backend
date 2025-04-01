@@ -4,12 +4,12 @@ on:
   push:
     paths:
       - 'app/**'
-      - 'Tests/**'
+      - 'tests/**'
       - '.github/workflows/backend-tests.yml'
   pull_request:
     paths:
       - 'app/**'
-      - 'Tests/**' 
+      - 'tests/**' 
  
 jobs:
   test:
@@ -32,4 +32,4 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=app Tests/
+          pytest --cov=app tests/
