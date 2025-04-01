@@ -9,11 +9,11 @@ on:
   pull_request:
     paths:
       - 'app/**'
-      - 'tests/**'
-
+      - 'tests/**' 
+ 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest #all
 
     steps:
       - name: Checkout repository
