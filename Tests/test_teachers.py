@@ -1,4 +1,3 @@
-# tests/test_teachers.py
 import pytest
 import json
 import sys
