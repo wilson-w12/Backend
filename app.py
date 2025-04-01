@@ -83,15 +83,16 @@ def admin_or_self_required(func):
     @wraps(func)
     def wrapper(teacher_id, *args, **kwargs):
         current_user_id = get_jwt_identity()
-        current_user = db.teachers.find_one({"_id": current_user_id})
+        current_user = db.teachers.find_one({"_id": ObjectId(current_user_id)})
 
         if not current_user:
             return jsonify({"error": "User not found"}), 404
 
         # is_admin = current_user.get("role") == "admin"
+        is_admin = current_user.get("role") == "admin"
         is_same_teacher = teacher_id == current_user_id
 
-        if not (is_same_teacher):
+        if not (is_admin or is_same_teacher):
             return jsonify({"error": "Unauthorized to update this teacher"}), 403
 
         return func(teacher_id, *args, **kwargs)
@@ -171,6 +172,7 @@ def request_password_reset():
 
 # ----------- Teachers Endpoints ------------
 
+# Add a teacher
 @app.route('/api/teachers', methods=['POST'])  # Ensure POST method here
 @jwt_required()
 def add_teacher():
@@ -283,23 +285,17 @@ def get_all_teachers():
 @app.route('/api/teachers/<teacher_id>', methods=['PUT'])
 @jwt_required()
 @admin_or_self_required
-def update_teacher(teacher_id):
-    current_user_id = get_jwt_identity()  
-    if teacher_id != current_user_id:
-        return jsonify({"error": "Unauthorized to update this teacher"}), 403
-    
+def update_teacher(teacher_id):    
     update_data = request.json
     allowed_fields = {"title", "first_name", "last_name", "email", "phone", "subjects"}
     
     # Filter only allowed fields
     update_fields = {key: value for key, value in update_data.items() if key in allowed_fields}
-
     if not update_fields:
         return jsonify({"error": "No valid fields to update"}), 400
 
     # Perform update
     result = db.teachers.update_one({"_id": teacher_id}, {"$set": update_fields})
-
     if result.modified_count == 0:
         return jsonify({"message": "No changes made or teacher not found"}), 200
 
@@ -378,6 +374,28 @@ def update_teachers():
 
     return jsonify({"message": "Teachers updated successfully"})
 
+# Delete teacher
+@app.route('/api/teachers/<teacher_id>', methods=['DELETE'])
+@jwt_required()
+@admin_or_self_required
+def delete_teacher(teacher_id):
+    try:
+        teacher_object_id = ObjectId(teacher_id)
+        teacher = teacher_collection.find_one({"_id": teacher_object_id})
+        if not teacher:
+            return jsonify({"error": "Teacher not found"}), 404
+
+        # Remove teacherfrom classes 
+        class_collection.update_many(
+            {"teacher_ids": teacher_object_id},
+            {"$pull": {"teacher_ids": teacher_object_id}}
+        )
+        teacher_collection.delete_one({"_id": teacher_object_id})
+
+        return jsonify({"message": "Teacher deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": "Teacher not found", "details": str(e)}), 500
+
 
 # ----------- Students CRUD Endpoints ------------
 
@@ -388,7 +406,7 @@ def add_student():
     data = request.get_json()
     
     # Validate required fields
-    required_fields = ['first_name', 'last_name', 'gender', 'year', 'set', 'teachers', 'target_grades']
+    required_fields = ['first_name', 'last_name', 'gender', 'year', 'set', 'target_grades']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
     
@@ -399,20 +417,21 @@ def add_student():
         "gender": data['gender'],
         "year": int(data['year']),  # Ensure year is stored as an integer
         "set": data['set'],
-        "target_grades": data['target_grades'],  # Store provided target grades
-        "class_ids": list(data['teachers'].values())  # Store associated class IDs
+        "target_grades": data['target_grades']  # Store provided target grades
     }
     
     # Insert student into the database
     result = student_collection.insert_one(new_student)
     student_id = str(result.inserted_id)
 
-    # Update each class to include the new student ID
-    for class_id in new_student["class_ids"]:
-        class_collection.update_one(
-            {"_id": class_id},
-            {"$addToSet": {"student_ids": student_id}}  # Avoid duplicate entries
-        )
+    if 'teachers' in data:
+        class_ids = list(data['teachers'].values())
+        # Update each class to include the new student ID
+        for class_id in class_ids:
+            class_collection.update_one(
+                {"_id": class_id},
+                {"$addToSet": {"student_ids": student_id}}  # Avoid duplicate entries
+            )
     
     return jsonify({"message": "Student added and assigned to classes", "student_id": student_id}), 201
 
@@ -685,12 +704,13 @@ def convert_object_ids(data):
 @jwt_required()
 def add_class():
     data = request.get_json()
-    if not data.get('name'):
-        return jsonify({"error": "Missing required fields"}), 400
     new_class = {
-        "name": data['name'],
-        "teacher_ids": [],  
-        "student_ids": []   
+        "_id": data['_id'],
+        "subject": data['subject'],
+        "year": data['year'],
+        "set": data['set'],
+        "teacher_ids": data['teacher_ids'],  
+        "student_ids": data['student_ids']   
     }
     result = class_collection.insert_one(new_class)
     return jsonify({"message": "Class added", "class_id": str(result.inserted_id)}), 201
@@ -700,20 +720,20 @@ def add_class():
 @jwt_required()
 def edit_class(class_id):
     data = request.get_json()
-    class_data = class_collection.find_one({"_id": ObjectId(class_id)})
+    class_data = class_collection.find_one({"_id": class_id})
     if not class_data:
         return jsonify({"error": "Class not found"}), 404
-    class_collection.update_one({"_id": ObjectId(class_id)}, {"$set": data})
+    class_collection.update_one({"_id": class_id}, {"$set": data})
     return jsonify({"message": "Class updated successfully"}), 200
 
 # Delete class
 @app.route('/api/classes/<class_id>', methods=['DELETE'])
 @jwt_required()
 def delete_class(class_id):
-    class_data = class_collection.find_one({"_id": ObjectId(class_id)})
+    class_data = class_collection.find_one({"_id": class_id})
     if not class_data:
         return jsonify({"error": "Class not found"}), 404
-    class_collection.delete_one({"_id": ObjectId(class_id)})
+    class_collection.delete_one({"_id": class_id})
     return jsonify({"message": "Class deleted successfully"}), 200
 
 
