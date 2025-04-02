@@ -4,16 +4,16 @@ on:
   push:
     paths:
       - 'app/**'
-      - 'tests/**'
+      - 'Tests/**'
       - '.github/workflows/backend-tests.yml'
   pull_request:
     paths:
       - 'app/**'
-      - 'tests/**'
-
+      - 'Tests/**' 
+ 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
 
     steps:
       - name: Checkout repository
@@ -30,11 +30,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-      - name: List files (for debug)
-        run: |
-          pwd
-          ls -R
-
       - name: Run tests with coverage
         run: |
-          pytest --cov=app tests/
+          pytest --cov=app Tests/
