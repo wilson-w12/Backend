@@ -9,8 +9,8 @@ on:
   pull_request:
     paths:
       - 'app/**'
-      - 'tests/**' 
- 
+      - 'tests/**'
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -29,6 +29,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
+
+      - name: List files (for debug)
+        run: |
+          pwd
+          ls -R
 
       - name: Run tests with coverage
         run: |
