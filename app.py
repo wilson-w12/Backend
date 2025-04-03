@@ -20,9 +20,8 @@ from urllib.parse import unquote
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = 'COM668'
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)  # Expiration time
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=12) 
 
-# Enable logging using Python's built-in logging module
 logging.basicConfig(level=logging.DEBUG)
 
 # MongoDB connection settings
