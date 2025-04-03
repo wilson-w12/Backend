@@ -102,6 +102,6 @@ def test_delete_teacher(client, auth_header, created_teacher):
     assert response.status_code == 200
     assert response.json["message"] == "Teacher deleted successfully"
 
-    # Verify teacher no longer exists
+    # Verify teacher doesn't exist
     verify_resp = client.get(f"/api/teachers/{created_teacher}", headers=auth_header)
     assert verify_resp.status_code == 404
