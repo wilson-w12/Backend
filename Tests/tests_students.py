@@ -85,7 +85,7 @@ def test_get_student(client, auth_header, created_student):
     assert get_resp.status_code == 200
     assert get_resp.json["first_name"] == "Testy"
 
-# Edit student
+# Edit student 
 def test_edit_student(client, auth_header, created_student):
     student_id = created_student
     edit_resp = client.put(

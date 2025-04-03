@@ -3,14 +3,15 @@ name: Run Backend Tests
 on:
   push:
     paths:
-      - 'app/**'
-      - 'Tests/**'
+      - '**.py'
+      - 'requirements.txt'
       - '.github/workflows/backend-tests.yml'
   pull_request:
     paths:
-      - 'app/**'
-      - 'Tests/**' 
- 
+      - '**.py'
+      - 'requirements.txt'
+      - '.github/workflows/backend-tests.yml'
+
 jobs:
   test:
     runs-on: ubuntu-latest 
