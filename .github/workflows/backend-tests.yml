@@ -14,7 +14,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -31,6 +31,20 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage and output report
         run: |
-          pytest --cov=app Tests/
+          pytest --cov=app --junitxml=test-results.xml Tests/
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: test-results.xml
+
+      - name: Publish test results to GitHub Actions UI
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Pytest Results
+          path: test-results.xml
+          reporter: java-junit
