@@ -333,7 +333,7 @@ def reset_password():
         return jsonify({"message": "Invalid verification code format"}), 400
 
     # Hash new password
-    hashed_password = generate_password_hash(new_password)
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Update password in the database
     teacher_collection.update_one({"email": email}, {"$set": {"password": hashed_password}})
