@@ -1,4 +1,5 @@
 name: Run Backend Tests
+
 on:
   push:
     paths:
@@ -32,4 +33,4 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest Tests/
+          pytest --cov=app Tests/
