@@ -99,7 +99,15 @@ def test_get_teacher_subjects_summary(client, auth_header):
     assert response.status_code == 200
     assert "subjects" in response.get_json()
 
+def test_edit_class_not_found(client, auth_header):
+    response = client.put("/api/classes/nonexistent_id", json={"subject": "New Subject"}, headers=auth_header)
+    assert response.status_code == 404
+
 def test_delete_class(client, auth_header):
     response = client.delete("/api/classes/C00Test", headers=auth_header)
     assert response.status_code == 200
     assert response.json["message"] == "Class deleted successfully"
+
+def test_delete_class_not_found(client, auth_header):
+    response = client.delete("/api/classes/nonexistent_id", headers=auth_header)
+    assert response.status_code == 404

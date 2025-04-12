@@ -129,6 +129,10 @@ def test_get_exam_nonexistent(client, auth_header):
     response = client.get("/api/exams/605c3c0f4a8e4b26f0b3e9f0", headers=auth_header)
     assert response.status_code in [404, 500]
 
+def test_get_recent_exam_not_found(client, auth_header):
+    response = client.get("/api/classes/nonexistent_id/recent-exam", headers=auth_header)
+    assert response.status_code == 404
+
 # ---------- CLEANUP ----------
 
 def test_delete_class(client, auth_header):

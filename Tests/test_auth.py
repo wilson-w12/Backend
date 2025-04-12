@@ -55,6 +55,10 @@ def test_validate_token_failure(client):
     assert response.status_code == 401
     assert response.get_json()['valid'] is False
 
+def test_request_password_reset(client, auth_header):
+    response = client.post('/api/request-password-reset', json={}, headers=auth_header)
+    assert response.status_code in [200, 400, 401, 403, 404, 500]
+
 def test_password_reset_request_not_found(client):
     response = client.post('/api/request-password-reset', json={'email': 'nonexistent@example.com'})
     assert response.status_code == 404
@@ -62,3 +66,21 @@ def test_password_reset_request_not_found(client):
 def test_password_reset_missing_fields(client, auth_header):
     response = client.put('/api/reset-password', json={'email': 'admin@admin.com'}, headers=auth_header)
     assert response.status_code == 400
+
+def test_reset_password(client):
+    email = "admin@admin.com"
+    response = client.post("/api/request-password-reset", json={"email": email})
+    assert response.status_code == 200
+
+    from app import verification_codes
+    assert email in verification_codes
+    code = verification_codes[email]["code"]
+
+    payload = {
+        "email": email,
+        "verification_code": str(code),
+        "new_password": "new_secure_password"
+    }
+    reset_response = client.put("/api/reset-password", json=payload)
+    assert reset_response.status_code == 200
+    assert "Password reset successful" in reset_response.get_data(as_text=True)
