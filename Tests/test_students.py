@@ -102,3 +102,19 @@ def test_delete_student(client, auth_header, created_student):
     assert del_resp.status_code == 200
     assert del_resp.json["message"] == "Student deleted successfully"
 
+
+
+def test_add_student_missing_fields(client, auth_header):
+    response = client.post('/api/students', json={"first_name": "Test"}, headers=auth_header)
+    assert response.status_code == 400
+    assert "Missing required fields" in response.get_data(as_text=True)
+
+def test_edit_nonexistent_student(client, auth_header):
+    response = client.put('/api/students/605c3c0f4a8e4b26f0b3e9f0', json={"first_name": "Updated"}, headers=auth_header)
+    assert response.status_code in [404, 200]  
+
+def test_get_students_with_filters(client, auth_header):
+    response = client.get('/api/students?page=1&page_size=5&year=2023', headers=auth_header)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "students" in data

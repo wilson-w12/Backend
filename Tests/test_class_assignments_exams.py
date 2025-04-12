@@ -82,7 +82,7 @@ def test_add_and_delete_assignment(client, auth_header):
         "B_grade": 70,
         "C_grade": 60,
         "F_grade": 0,
-        "results": [],  # No students for now
+        "results": [],  
         "class_id": "C00Test"
     }
 
@@ -138,3 +138,26 @@ def test_delete_class(client, auth_header):
     response = client.delete("/api/classes/C00Test", headers=auth_header)
     assert response.status_code == 200
     assert response.json["message"] == "Class deleted successfully"
+
+
+def test_create_assignment_missing_fields(client, auth_header):
+    response = client.post(
+        '/api/classes/invalid_class_id/assignments',
+        json={"title": "Incomplete Assignment"},
+        headers=auth_header
+    )
+    assert response.status_code == 400
+    assert "is required" in response.get_data(as_text=True)
+
+def test_create_exam_invalid_data(client, auth_header):
+    response = client.post(
+        '/api/exams',
+        json={"title": "Bad Exam"},
+        headers=auth_header
+    )
+    assert response.status_code == 400
+    assert "is required" in response.get_data(as_text=True)
+
+def test_get_assignments_for_invalid_class(client, auth_header):
+    response = client.get('/api/classes/invalid_class_id/assignments', headers=auth_header)
+    assert response.status_code == 404

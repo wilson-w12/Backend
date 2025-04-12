@@ -105,3 +105,28 @@ def test_delete_teacher(client, auth_header, created_teacher):
     # Verify teacher doesn't exist
     verify_resp = client.get(f"/api/teachers/{created_teacher}", headers=auth_header)
     assert verify_resp.status_code == 404
+
+def test_add_teacher_password_mismatch(client, auth_header):
+    new_teacher = {
+        "firstName": "Mismatch",
+        "lastName": "Test",
+        "gender": "Other",
+        "email": "mismatch@example.com",
+        "phone": "1234567890",
+        "password": "pass1",
+        "confirmPassword": "pass2",
+        "subjects": ["Math"],
+        "classes": []
+    }
+    response = client.post('/api/teachers', json=new_teacher, headers=auth_header)
+    assert response.status_code == 400
+    assert "Passwords do not match" in response.get_data(as_text=True)
+
+def test_update_teacher_unauthorized(client):
+    # Simulate without token
+    response = client.put('/api/teachers/fakeid', json={"first_name": "Hack"})
+    assert response.status_code == 401 or response.status_code == 403
+
+def test_delete_teacher_not_found(client, auth_header):
+    response = client.delete('/api/teachers/605c3c0f4a8e4b26f0b3e9f0', headers=auth_header)
+    assert response.status_code in [404, 500]
