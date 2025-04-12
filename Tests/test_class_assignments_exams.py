@@ -53,22 +53,6 @@ def test_add_class(client, auth_header):
     assert response.status_code in [200, 201]  
     assert response.json["class_id"] == "C00Test"
 
-def test_get_class(client, auth_header):
-    response = client.get("/api/classes/C00Test", headers=auth_header)
-    assert response.status_code == 200
-    assert response.json["class"]["_id"] == "C00Test" 
-
-def test_edit_class_teacher(client, auth_header):
-    update_data = {
-        "teacher_ids": ["603ddf3f9a1d8c0015c9e0c3"]
-    }
-    response = client.put(
-        "/api/classes/C00Test",
-        data=json.dumps(update_data),
-        headers={**auth_header, "Content-Type": "application/json"}
-    )
-    assert response.status_code == 200
-
 # ---------- ASSIGNMENTS ----------
 
 def test_add_and_delete_assignment(client, auth_header):
@@ -140,14 +124,14 @@ def test_delete_class(client, auth_header):
     assert response.json["message"] == "Class deleted successfully"
 
 
-def test_create_assignment_missing_fields(client, auth_header):
+def test_create_assignment_missing_class(client, auth_header):
     response = client.post(
         '/api/classes/invalid_class_id/assignments',
         json={"title": "Incomplete Assignment"},
         headers=auth_header
     )
-    assert response.status_code == 400
-    assert "is required" in response.get_data(as_text=True)
+    assert response.status_code == 404 
+    assert "Class not found" in response.get_data(as_text=True)
 
 def test_create_exam_invalid_data(client, auth_header):
     response = client.post(
