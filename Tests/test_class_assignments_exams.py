@@ -116,6 +116,19 @@ def test_add_and_delete_exam(client, auth_header):
     assert delete_resp.status_code == 200
     assert delete_resp.json["message"] == "Exam deleted successfully"
 
+def test_assignments_exams_due_today(client, auth_header):
+    response = client.get("/api/teacher/assignments-exams-due-today", headers=auth_header)
+    assert response.status_code == 200
+    assert "assignments_due_today" in response.get_json()
+
+def test_get_exam_filters_invalid_id(client, auth_header):
+    response = client.get("/api/exams/invalidid/exam-filters", headers=auth_header)
+    assert response.status_code == 400
+
+def test_get_exam_nonexistent(client, auth_header):
+    response = client.get("/api/exams/605c3c0f4a8e4b26f0b3e9f0", headers=auth_header)
+    assert response.status_code in [404, 500]
+
 # ---------- CLEANUP ----------
 
 def test_delete_class(client, auth_header):

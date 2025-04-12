@@ -88,6 +88,16 @@ def test_edit_class_teacher(client, auth_header):
         headers={**auth_header, "Content-Type": "application/json"}
     )
     assert response.status_code == 200
+    
+def test_get_teacher_class_count(client, auth_header):
+    response = client.get("/api/teacher/classes/total", headers=auth_header)
+    assert response.status_code == 200
+    assert "total_classes" in response.get_json()
+
+def test_get_teacher_subjects_summary(client, auth_header):
+    response = client.get("/api/teacher/classes/subjects/total", headers=auth_header)
+    assert response.status_code == 200
+    assert "subjects" in response.get_json()
 
 def test_delete_class(client, auth_header):
     response = client.delete("/api/classes/C00Test", headers=auth_header)

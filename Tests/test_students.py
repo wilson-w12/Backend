@@ -118,3 +118,17 @@ def test_get_students_with_filters(client, auth_header):
     assert response.status_code == 200
     data = response.get_json()
     assert "students" in data
+
+def test_get_all_students_with_pagination(client, auth_header):
+    response = client.get("/api/students?page=1&page_size=2", headers=auth_header)
+    assert response.status_code == 200
+    assert "students" in response.get_json()
+
+def test_get_students_filters(client, auth_header):
+    response = client.get("/api/students/students-filters", headers=auth_header)
+    assert response.status_code == 200
+    assert "years" in response.get_json()
+
+def test_get_nonexistent_student(client, auth_header):
+    response = client.get("/api/students/605c3c0f4a8e4b26f0b3e9f0", headers=auth_header)
+    assert response.status_code in [404, 500]
