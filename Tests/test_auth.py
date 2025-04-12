@@ -67,7 +67,7 @@ def test_password_reset_missing_fields(client, auth_header):
     response = client.put('/api/reset-password', json={'email': 'admin@admin.com'}, headers=auth_header)
     assert response.status_code == 400
 
-def test_reset_password(client):
+def test_reset_password(client, auth_header):
     email = "admin@admin.com"
     response = client.post("/api/request-password-reset", json={"email": email})
     assert response.status_code == 200
@@ -81,6 +81,21 @@ def test_reset_password(client):
         "verification_code": str(code),
         "new_password": "new_secure_password"
     }
-    reset_response = client.put("/api/reset-password", json=payload)
+    reset_response = client.put("/api/reset-password", json=payload, headers=auth_header)
     assert reset_response.status_code == 200
     assert "Password reset successful" in reset_response.get_data(as_text=True)
+
+    response2 = client.post("/api/request-password-reset", json={"email": email})
+    assert response2.status_code == 200
+
+    code2 = verification_codes[email]["code"]
+
+    restore_payload = {
+        "email": email,
+        "verification_code": str(code2),
+        "new_password": "test"
+    }
+    restore_response = client.put("/api/reset-password", json=restore_payload, headers=auth_header)
+    assert restore_response.status_code == 200
+    assert "Password reset successful" in restore_response.get_data(as_text=True)
+
