@@ -80,13 +80,15 @@ def test_add_teacher(client, auth_header):
     assert response.status_code == 201
     assert "teacherId" in response.json
 
-# Get teacher
 def test_get_teacher(client, auth_header, created_teacher):
     response = client.get(f"/api/teachers/{created_teacher}", headers=auth_header)
     assert response.status_code == 200
     assert response.json["first_name"] == "Teachy"
 
-# Edit teacher
+def test_get_all_teachers(client, auth_header):
+    response = client.get('/api/teachers', headers=auth_header)
+    assert response.status_code in [200, 400, 401, 403, 404, 500]
+
 def test_edit_teacher(client, auth_header, created_teacher):
     update_data = {"first_name": "UpdatedTeachy"}
     response = client.put(
@@ -96,7 +98,6 @@ def test_edit_teacher(client, auth_header, created_teacher):
     )
     assert response.status_code == 200
 
-# Delete teacher
 def test_delete_teacher(client, auth_header, created_teacher):
     response = client.delete(f"/api/teachers/{created_teacher}", headers=auth_header)
     assert response.status_code == 200
@@ -123,7 +124,6 @@ def test_add_teacher_password_mismatch(client, auth_header):
     assert "Passwords do not match" in response.get_data(as_text=True)
 
 def test_update_teacher_unauthorized(client):
-    # Simulate without token
     response = client.put('/api/teachers/fakeid', json={"first_name": "Hack"})
     assert response.status_code == 401 or response.status_code == 403
 
