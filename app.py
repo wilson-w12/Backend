@@ -44,7 +44,7 @@ mail = Mail(app)
 
 bcrypt_flask = Bcrypt(app)
 
-# In-memory store for verification codes
+# Memory store for verification codes
 verification_codes = {}
 
 jwt = JWTManager(app)
@@ -144,24 +144,24 @@ def validate_token():
 @app.route('/api/request-password-reset', methods=['POST'])
 def request_password_reset():
     email = request.json.get('email')
-    # Check if the teacher exists in the database
+    # Check if teacher exists 
     teacher = teacher_collection.find_one({"email": email})
     if not teacher:
         return jsonify({"message": "Email not found"}), 404
 
-    # Generate a verification code
+    # Generate verification code
     verification_code = random.randint(100000, 999999)
     
-    # Store the verification code in MongoDB with expiration (15 minutes)
+    # Store verification code in MongoDB with 15 min expiration
     verification_codes[email] = {
         'code': verification_code,
-        'expires_at': datetime.now(UTC) + timedelta(minutes=15)  # Use timezone-aware datetime
+        'expires_at': datetime.now(UTC) + timedelta(minutes=15) 
     }
 
-    # Send verification code via email
+    # Send email verification code 
     msg = Message(
         subject='Password Reset Verification Code',
-        sender=app.config['MAIL_DEFAULT_SENDER'],  # Ensure sender is set
+        sender=app.config['MAIL_DEFAULT_SENDER'], 
         recipients=[email],
         body=f'Your verification code is {verification_code}. It expires in 15 minutes.'
     )
@@ -171,8 +171,8 @@ def request_password_reset():
 
 # ----------- Teachers Endpoints ------------
 
-# Add a teacher
-@app.route('/api/teachers', methods=['POST'])  # Ensure POST method here
+# Add teacher
+@app.route('/api/teachers', methods=['POST'])  
 @jwt_required()
 def add_teacher():
     data = request.get_json()
@@ -182,11 +182,11 @@ def add_teacher():
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
     
-    # Check if passwords match
+    # Check passwords match
     if data['password'] != data['confirmPassword']:
         return jsonify({"error": "Passwords do not match"}), 400
 
-    # Prepare the new teacher object
+    # Prepare new teacher object
     new_teacher = {
         "title": data.get('title', ''),  
         "first_name": data['firstName'],
@@ -194,16 +194,16 @@ def add_teacher():
         "gender": data['gender'],
         "email": data['email'],
         "phone": data['phone'],
-        "password": generate_password_hash(data['password']),  # Hash password before saving
+        "password": bcrypt.hashpw((data['password']).encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),  
         "subjects": data['subjects'],
         "role": "teacher"
     }
 
-    # Insert teacher into the database
+    # Insert teacher 
     result = teacher_collection.insert_one(new_teacher)
     teacher_id = str(result.inserted_id)
 
-    # Update the specified classes with the new teacher ID
+    # Update specified classes with new teacher ID
     for class_info in data['classes']:
         # Match class by subject, year, and set 
         class_filter = {
@@ -214,14 +214,13 @@ def add_teacher():
 
         class_update = {
             "$addToSet": {
-                "teacher_ids": teacher_id  # Add teacher_id to teacher_ids array (prevents duplicates)
+                "teacher_ids": teacher_id  # Add teacher_id to teacher_ids (prevents duplicates)
             }
         }
         
-        # Find the matching class based on subject, year, and set
+        # Find matching class for subject, year, and set
         result = class_collection.update_one(class_filter, class_update)
-
-        # If no class is found, handle the case where the class doesn't exist yet
+        # If no class
         if result.matched_count == 0:
             return jsonify({"error": f"Class with subject {class_info['subject']}, year {class_info['year']}, and set {class_info['set']} not found."}), 404
 
@@ -319,13 +318,13 @@ def reset_password():
     if not teacher:
         return jsonify({"message": "Invalid email"}), 400
 
-    # Ensure verification_codes dictionary exists
+    # Ensure verification_codes exists
     global verification_codes
     if email not in verification_codes:
         return jsonify({"message": "Invalid email"}), 400
 
     stored_code = verification_codes[email]
-    # Ensure verification_code is numeric before conversion
+    # Ensure verification_code is integer
     try:
         if int(stored_code['code']) != int(verification_code):
             return jsonify({"message": "Invalid or expired verification code"}), 400
@@ -334,10 +333,8 @@ def reset_password():
 
     # Hash new password
     hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    
     # Update password in the database
     teacher_collection.update_one({"email": email}, {"$set": {"password": hashed_password}})
-
     # Remove used verification code
     del verification_codes[email]
 
@@ -414,22 +411,21 @@ def add_student():
         "first_name": data['first_name'],
         "last_name": data['last_name'],
         "gender": data['gender'],
-        "year": int(data['year']),  # Ensure year is stored as an integer
+        "year": int(data['year']),  
         "set": data['set'],
-        "target_grades": data['target_grades']  # Store provided target grades
+        "target_grades": data['target_grades'] 
     }
     
-    # Insert student into the database
+    # Insert student 
     result = student_collection.insert_one(new_student)
     student_id = str(result.inserted_id)
-
     if 'teachers' in data:
         class_ids = list(data['teachers'].values())
-        # Update each class to include the new student ID
+        # Update each class with new student ID
         for class_id in class_ids:
             class_collection.update_one(
                 {"_id": class_id},
-                {"$addToSet": {"student_ids": student_id}}  # Avoid duplicate entries
+                {"$addToSet": {"student_ids": student_id}}  # Prevent duplicates
             )
     
     return jsonify({"message": "Student added and assigned to classes", "student_id": student_id}), 201
@@ -442,7 +438,7 @@ def edit_student(student_id):
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    # Remove _id field 
+    # Remove _id  
     data.pop('_id', None)
 
     student_object_id = ObjectId(student_id)
@@ -474,24 +470,15 @@ def edit_student_classes(student_id):
     existing_classes = class_collection.find({"student_ids": student_object_id}, {"_id": 1})
     existing_class_ids = {str(cls["_id"]) for cls in existing_classes}
 
+    # Get classes to add and remove
     new_class_ids = set(data["classes"].values())
-
     classes_to_add = new_class_ids - existing_class_ids
     classes_to_remove = existing_class_ids - new_class_ids
-
-    print("Existing class IDs:", existing_class_ids)
-    print("New class IDs:", new_class_ids)
-    print("Classes to add:", classes_to_add)
-    print("Classes to remove:", classes_to_remove)
-
-   # Ensure classes_to_remove is not empty and contains valid IDs
     if classes_to_remove:
-        print(f"Removing student {student_object_id} from classes: {classes_to_remove}")
         result = class_collection.update_many(
-            {"_id": {"$in": [cls_id for cls_id in classes_to_remove]}},  # Class IDs remain strings
-            {"$pull": {"student_ids": student_object_id}}  # Student IDs are ObjectIds
+            {"_id": {"$in": [cls_id for cls_id in classes_to_remove]}}, 
+            {"$pull": {"student_ids": student_object_id}}  
         )
-        print(f"Removed from {result.modified_count} classes.")
         
     # Add student to new classes
     if classes_to_add:
@@ -639,7 +626,6 @@ def get_student(student_id):
         student = db.students.find_one({"_id": ObjectId(student_id)})
         if not student:
             return jsonify({"error": f"Student with ID {student_id} not found"}), 404
-        
         return jsonify(convert_object_ids(student)), 200
     except Exception as e:
         return jsonify({"error": "Unable to fetch class details", "details": str(e)}), 500
@@ -684,6 +670,7 @@ def get_student_filters(student_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+# Helper function to convert object ids 
 def convert_object_ids(data):
     """Recursively converts ObjectId fields to strings in a JSON-compatible format."""
     if isinstance(data, list):
@@ -748,22 +735,21 @@ def get_all_classes():
         subject = request.args.get('subject')
         year = request.args.get('year')
         set_value = request.args.get('set')  
-        teacher_id = request.args.get('teacher')  # Teacher query parameter
+        teacher_id = request.args.get('teacher')  
         search_terms = request.args.getlist('search_terms[]') 
         my_classes = request.args.get('my_classes', 'false').lower() == 'true'  
 
-        # Convert teacher_id to ObjectId if provided
+        # Convert teacher_id to ObjectId
         if teacher_id:
             try:
                 teacher_id = ObjectId(teacher_id)
             except Exception as e:
                 return jsonify({"error": "Invalid teacher ID format"}), 400
 
-        # Build the query filter based on the provided parameters
+        # Build the query filter 
         query_filter = {}
-
         if my_classes:
-            query_filter["teacher_ids"] = ObjectId(get_jwt_identity())  # Get the logged-in teacher's ID
+            query_filter["teacher_ids"] = ObjectId(get_jwt_identity())  
         if teacher_id: 
             query_filter["teacher_ids"] = teacher_id
         if subject:
@@ -806,7 +792,7 @@ def get_all_classes():
                 "total_classes": total_classes_count  
             }), 200
 
-        # Handle pagination if page_size is provided
+        # Handle pagination if page_size provided
         page_size = int(page_size)
         classes_cursor = class_collection.find(query_filter).skip((page - 1) * page_size).limit(page_size)
         classes_data = []
@@ -830,8 +816,6 @@ def get_all_classes():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-from bson import ObjectId
 
 # Get class, relevant teachers and students
 @app.route('/api/classes/<class_id>', methods=['GET'])
@@ -991,13 +975,13 @@ def add_assignment(class_id):
         if not class_details:
             return jsonify({"message": "Class not found"}), 404
         
-        # Verify necessary fields are present 
+        # Presence check necessary fields 
         required_fields = ["title", "topics", "due_date", "total_marks", "A*_grade", "A_grade", "B_grade", "C_grade", "F_grade", "results"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"message": f"{field} is required"}), 400
 
-        # Filter results to include only necessary fields
+        # Include only necessary fields
         filtered_results = []
         for result in data["results"]:
             filtered_results.append({
@@ -1038,13 +1022,13 @@ def add_exam():
         if not data:
             return jsonify({"message": "No data provided"}), 400
 
-        # Verify necessary fields are present 
+        # Presence check necessary fields 
         required_fields = ["title", "year", "subject", "due_date", "total_marks", "A*_grade", "A_grade", "B_grade", "C_grade", "F_grade", "results"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"message": f"{field} is required"}), 400
 
-        # Filter results to include only necessary fields
+        # Include only necessary fields
         filtered_results = []
         for result in data["results"]:
             filtered_results.append({
@@ -1080,12 +1064,12 @@ def add_exam():
 @teacher_required
 def delete_assignment(class_id, assignment_id):
     try:
-        # Check if the assignment exists
+        # Check assignment exists
         assignment = db.assignments.find_one({"_id": ObjectId(assignment_id), "class_id": class_id})
         if not assignment:
             return jsonify({"message": "Assignment not found"}), 404
         
-        # Delete the assignment
+        # Delete assignment
         db.assignments.delete_one({"_id": ObjectId(assignment_id), "class_id": class_id})
 
         return jsonify({"message": "Assignment deleted successfully"}), 200
@@ -1098,12 +1082,12 @@ def delete_assignment(class_id, assignment_id):
 @teacher_required
 def delete_exam(exam_id):
     try:
-        # Check if the exam exists
+        # Check exam exists
         exam = db.exams.find_one({"_id": ObjectId(exam_id)})
         if not exam:
             return jsonify({"message": "Exam not found"}), 404
         
-        # Delete the exam
+        # Delete exam
         db.exams.delete_one({"_id": ObjectId(exam_id)})
 
         return jsonify({"message": "Exam deleted successfully"}), 200
@@ -1125,7 +1109,7 @@ def assignments_exams_due_today():
         if not classes:
             return jsonify({"assignments_due_today": [], "exams_due_today": []}), 200
 
-        # Extract class details and map them by class_id
+        # Extract class details and map by class_id
         class_ids = [cls["_id"] for cls in classes]
         
         # Get assignments due today
@@ -1134,7 +1118,7 @@ def assignments_exams_due_today():
             class_id = assignment.get("class_id")
             # Find matching class info for the assignment
             class_info = next(cls for cls in classes if cls["_id"] == class_id)
-            # Add class_info to the assignment
+            # Add class_info to assignment
             assignment["class_info"] = {
                 "subject": class_info["subject"],
                 "year": class_info["year"],
@@ -1146,31 +1130,31 @@ def assignments_exams_due_today():
             handed_in_count = sum(1 for student_id in class_student_ids if any(result["student_id"] == student_id and result.get("mark") is not None for result in assignment["results"]))
             awaiting_count = len(class_student_ids) - handed_in_count
 
-            # Update the assignment with the counts
+            # Update assignment with counts
             assignment["handed_in_count"] = handed_in_count
             assignment["awaiting_count"] = awaiting_count
 
-        # Get exams due today (year-wide), but only consider teacher's class students
+        # Get exams due today (year-wide), for teacher's class students
         exams = list(db.exams.find({"year": {"$in": [cls["year"] for cls in classes]}, "subject": {"$in": [cls["subject"] for cls in classes]}, "due_date": today_date}))
         for exam in exams:
-            # Find the class(es) related to this exam's year and subject
+            # Find classes related to this exam's year and subject
             matching_classes = [cls for cls in classes if cls["year"] == exam["year"] and cls["subject"] == exam["subject"]]
             class_student_ids = []
             for cls in matching_classes:
                 class_student_ids.extend(cls.get("student_ids", []))
 
-            # Add class_info to the exam
+            # Add class_info to exam
             exam["class_info"] = {
                 "subject": exam["subject"],
                 "year": exam["year"],
                 "student_ids": class_student_ids
             }
 
-            # Count students who have handed in their exam (valid mark exists for the student in this exam)
+            # Count student's that have handed in their exam (valid mark exists for student)
             handed_in_count = sum(1 for student_id in class_student_ids if any(result["student_id"] == student_id and result.get("mark") is not None for result in exam["results"]))
             awaiting_count = len(class_student_ids) - handed_in_count
 
-            # Update the exam with the counts
+            # Update exam with counts
             exam["handed_in_count"] = handed_in_count
             exam["awaiting_count"] = awaiting_count
 
@@ -1194,7 +1178,7 @@ def assignments_exams_due_today():
 @teacher_required
 def get_class_assignments(class_id):
     try:
-        # Get class info using the class_id
+        # Get class info using class_id
         class_info = db.classes.find_one({"_id": class_id})
         if not class_info:
             return jsonify({"message": f"Class {class_id} not found"}), 404
@@ -1331,16 +1315,11 @@ def update_assignment(class_id, assignment_id):
                 mark = result.get("mark")
 
                 if mark is not None:
-                    # Ensure student_id is an ObjectId
                     student_id = ObjectId(student_id) if isinstance(student_id, str) else student_id
                     
-                    # Calculate percentage score
+                    # Calculate results
                     score = round((mark / total_marks) * 100, 2)
-
-                    # Recalculate grade if boundaries changed
                     grade = calculate_grade(mark, total_marks, data) if grade_boundaries_changed else result.get("grade", "Not Submitted")
-
-                    # Update results
                     result.update({"score": score, "grade": grade})
 
                     total_score_sum += score
@@ -1581,11 +1560,11 @@ def get_recent_exam(class_id):
         # Filter exams results for class
         recent_exam = None
         for exam in exams:
-            # Filter results for the current class' students
+            # Filter results for current class' students
             class_results = [result for result in exam.get("results", []) if result["student_id"] in student_ids]
             if class_results:
                 recent_exam = exam
-                break  # Stop at the first matching exam
+                break  # Stop at first matching exam
 
         if not recent_exam:
             return jsonify({"message": f"No recent exams found for class {class_id}"}), 404
@@ -1622,7 +1601,7 @@ def get_recent_exam(class_id):
 @jwt_required()
 @teacher_required
 def get_exams_chart(student_id):
-    student_object_id = ObjectId(student_id)  # Convert student_id to ObjectId
+    student_object_id = ObjectId(student_id)  
 
     # Get subject filter
     subject_filter = request.args.get('subject', '').strip()
@@ -1652,7 +1631,7 @@ def get_exams_chart(student_id):
         student_scores_query = [
             {"$match": {"subject": subject_filter, "year": student_year}},
             {"$unwind": "$results"},
-            {"$match": {"results.student_id": student_object_id}},  # Use ObjectId for student_id
+            {"$match": {"results.student_id": student_object_id}},  
             {"$sort": {"due_date": -1}},
             {"$project": {
                 "_id": 0,
@@ -1694,7 +1673,7 @@ def get_exams_chart(student_id):
                             "$and": [
                                 {"$eq": ["$subject", "$$subject"]},
                                 {"$eq": ["$year", "$$year"]},
-                                {"$in": [student_object_id, "$student_ids"]}  # Use ObjectId for student_id
+                                {"$in": [student_object_id, "$student_ids"]} 
                             ]
                         }
                     }},
@@ -1887,7 +1866,7 @@ def get_assignments_chart(student_id):
             {"$match": {"results.student_id": student_object_id, "class_id": {"$in": filtered_class_ids}}},
             {"$sort": {"due_date": -1}},  # Sort by due_date
             {"$group": {
-                "_id": "$class_id",  # Group by class_id for most recent assignment per class
+                "_id": "$class_id",  # Group by class_id 
                 "assignment_id": {"$first": {"$toString": "$_id"}},  # Keep most recent assignment
                 "title": {"$first": "$title"},
                 "due_date": {"$first": "$due_date"},
@@ -1925,7 +1904,7 @@ def get_assignments_chart(student_id):
     if subject_filter:
         # Get all assignments for filtered classes
         class_avg_query = [
-            {"$unwind": "$results"},  # Access individual student results
+            {"$unwind": "$results"},  # Individual student results
             {"$match": {"class_id": {"$in": filtered_class_ids}}},  # Match filtered class ids
             {"$group": {
                 "_id": {"class_id": "$class_id", "assignment_id": "$_id"},  # Group by class_id and assignment_id
@@ -1953,7 +1932,7 @@ def get_assignments_chart(student_id):
     else:
         # Group by class_id, get most recent assignment average
         class_avg_query = [
-            {"$unwind": "$results"},  # Unwind to access individual student results
+            {"$unwind": "$results"},  # Unwind for individual student results
             {"$match": {"results.student_id": student_object_id, "class_id": {"$in": filtered_class_ids}}},  # Match class ids for student
             {"$match": {"results.mark": {"$ne": None}}},  # Filter out null mark values
             {"$sort": {"due_date": -1}},  # Sort by due_date
@@ -2029,15 +2008,11 @@ def update_exam_details(exam_id):
                 mark = result.get("mark")
 
                 if mark is not None:
-                    # Ensure student_id is an ObjectId
                     student_id = ObjectId(student_id) if isinstance(student_id, str) else student_id
                     
-                    # Calculate percentage score
+                    # Calculate results
                     score = round((mark / total_marks) * 100, 2)
-
-                    # Calculate grade if boundaries changed
                     grade = calculate_grade(mark, total_marks, data) if grade_boundaries_changed else result.get("grade", "Not Submitted")
-
                     result.update({"score": score, "grade": grade})
                     total_score_sum += score
                     num_students += 1

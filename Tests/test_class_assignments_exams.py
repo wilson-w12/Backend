@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app as flask_app
 from pymongo import MongoClient
 
-# ---------- SETUP ----------
+# SETUP 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
@@ -34,7 +34,7 @@ def auth_header(client):
     token = response.json["token"]
     return {"Authorization": f"Bearer {token}"}
 
-# ---------- CLASSES ----------
+# CLASSES 
 
 def test_add_class(client, auth_header):
     class_data = {
@@ -53,7 +53,7 @@ def test_add_class(client, auth_header):
     assert response.status_code in [200, 201]  
     assert response.json["class_id"] == "C00Test"
 
-# ---------- ASSIGNMENTS ----------
+# ASSIGNMENTS 
 
 def test_add_and_delete_assignment(client, auth_header):
     assignment_data = {
@@ -87,7 +87,7 @@ def test_add_and_delete_assignment(client, auth_header):
     assert delete_resp.status_code == 200, f"Failed to delete assignment: {delete_resp.data}"
     assert delete_resp.json["message"] == "Assignment deleted successfully"
 
-# ---------- EXAMS ----------
+# EXAMS 
 
 def test_add_and_delete_exam(client, auth_header):
     exam_data = {
@@ -133,7 +133,7 @@ def test_get_recent_exam_not_found(client, auth_header):
     response = client.get("/api/classes/nonexistent_id/recent-exam", headers=auth_header)
     assert response.status_code == 404
 
-# ---------- CLEANUP ----------
+# CLEANUP 
 
 def test_delete_class(client, auth_header):
     response = client.delete("/api/classes/C00Test", headers=auth_header)

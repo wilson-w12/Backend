@@ -7,7 +7,7 @@ from pymongo import MongoClient
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app as flask_app
 
-# ---------- SETUP ----------
+# SETUP 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():

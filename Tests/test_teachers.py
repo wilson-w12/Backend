@@ -56,7 +56,6 @@ def created_teacher(client, auth_header):
     assert response.status_code == 201
     return response.json["teacherId"]
 
-# Add teacher
 def test_add_teacher(client, auth_header):
     teacher_data = {
         "title": "Ms.",

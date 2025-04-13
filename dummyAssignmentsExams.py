@@ -32,7 +32,7 @@ subject_topics = {
 client = MongoClient("mongodb://localhost:27017/")  
 db = client["COM668Coursework"]
 
-# Drop collections if they already exist
+# Drop collections if existing
 db.assignments.drop()
 db.exams.drop()
 
@@ -47,10 +47,10 @@ grade_boundaries = {
 
 # Grading system
 def calculate_grade(mark, total_marks):
-    if mark is None:  # Handle non-submitted cases
+    if mark is None:  
         return {"score": None, "grade": "Not Submitted"}
 
-    score = (mark / total_marks) * 100  # Calculate percentage
+    score = (mark / total_marks) * 100 
     if score >= 90:
         grade = "A*"
     elif score >= 80:
@@ -62,7 +62,7 @@ def calculate_grade(mark, total_marks):
     else:
         grade = "F"
 
-    return {"score": round(score, 2), "grade": grade}  # Round percentage to 2 decimal places
+    return {"score": round(score, 2), "grade": grade}  # Round percentage to 2dp
 
 # Generate past assignments
 assignment_data = []
@@ -79,7 +79,7 @@ for cls in db.classes.find():
         total_score_sum = 0
         submitted_students = 0
         for student_id in student_ids:
-            mark = random.randint(50, total_marks)  # Simulate a random mark for each student
+            mark = random.randint(50, total_marks) 
             grade_data = calculate_grade(mark, total_marks)
             total_score_sum += grade_data["score"]
             submitted_students += 1
@@ -90,7 +90,7 @@ for cls in db.classes.find():
                 "grade": grade_data["grade"]
             })
         
-        average_score = total_score_sum / max(1, submitted_students)  # Average of scores
+        average_score = total_score_sum / max(1, submitted_students)  
         
         assignment_data.append({
             "class_id": cls["_id"],
@@ -98,9 +98,9 @@ for cls in db.classes.find():
             "topics": random.choice(subject_topics.get(subject, ["General Topic"])),
             "due_date": due_date.strftime("%Y-%m-%d"),
             "total_marks": total_marks,
-            "average_score": round(average_score, 2),  # Store as average score
+            "average_score": round(average_score, 2), 
             "results": student_results,
-            **grade_boundaries  # Include grade boundaries
+            **grade_boundaries  
         })
 
 # Generate future assignments (2-3 per class)
@@ -123,30 +123,30 @@ for cls in db.classes.find():
 db.assignments.insert_many(assignment_data)
 
 
-# Function to get all students for a given year
+# Get all students for a year
 def get_students_by_year(year):
     student_ids = set()
     for cls in db.classes.find({"year": year}, {"student_ids": 1}):
-        student_ids.update(cls["student_ids"])  # Collect all unique student IDs
+        student_ids.update(cls["student_ids"])  
     return list(student_ids)
 
 # Generate past exams (5 per subject per year)
 exam_data = []
 for year in db.classes.distinct('year'):
     for subject in db.classes.distinct('subject'):
-        students_in_year = get_students_by_year(year)  # Get all students in this year
+        students_in_year = get_students_by_year(year)  # Get all students in year
 
         for i in range(5):
             total_marks = random.randint(80, 100)
             due_date = datetime.datetime.now() - datetime.timedelta(days=random.randint(0, 90))
 
-            # Generate results for all students in the year
+            # Generate results for all students in  year
             student_results = []
             total_score_sum = 0
             submitted_students = 0
 
             for student_id in students_in_year:
-                mark = random.randint(50, total_marks)  # Simulate a random mark
+                mark = random.randint(50, total_marks)  
                 grade_data = calculate_grade(mark, total_marks)
                 total_score_sum += grade_data["score"]
                 submitted_students += 1
@@ -157,7 +157,7 @@ for year in db.classes.distinct('year'):
                     "grade": grade_data["grade"]
                 })
 
-            average_score = total_score_sum / max(1, submitted_students)  # Avoid division by zero
+            average_score = total_score_sum / max(1, submitted_students)  # No division by zero
 
             exam_data.append({
                 "title": f"{subject} Exam {i+1}",

@@ -56,7 +56,6 @@ def created_student(client, auth_header):
     assert response.status_code == 201
     return response.json["student_id"]
 
-# Add student
 def test_add_student(client, auth_header):
     student_data = {
         "first_name": "TestAdd",
@@ -78,14 +77,12 @@ def test_add_student(client, auth_header):
     assert response.status_code == 201
     assert "student_id" in response.json
 
-# Get student
 def test_get_student(client, auth_header, created_student):
     student_id = created_student
     get_resp = client.get(f"/api/students/{student_id}", headers=auth_header)
     assert get_resp.status_code == 200
     assert get_resp.json["first_name"] == "Testy"
 
-# Edit student 
 def test_edit_student(client, auth_header, created_student):
     student_id = created_student
     edit_resp = client.put(
@@ -95,14 +92,11 @@ def test_edit_student(client, auth_header, created_student):
     )
     assert edit_resp.status_code == 200
 
-# Delete student
 def test_delete_student(client, auth_header, created_student):
     student_id = created_student
     del_resp = client.delete(f"/api/students/{student_id}", headers=auth_header)
     assert del_resp.status_code == 200
     assert del_resp.json["message"] == "Student deleted successfully"
-
-
 
 def test_add_student_missing_fields(client, auth_header):
     response = client.post('/api/students', json={"first_name": "Test"}, headers=auth_header)
