@@ -293,7 +293,7 @@ def update_teacher(teacher_id):
         return jsonify({"error": "No valid fields to update"}), 400
 
     # Perform update
-    result = db.teachers.update_one({"_id": teacher_id}, {"$set": update_fields})
+    result = db.teachers.update_one({"_id": ObjectId(teacher_id)}, {"$set": update_fields})
     if result.modified_count == 0:
         return jsonify({"message": "No changes made or teacher not found"}), 200
 
