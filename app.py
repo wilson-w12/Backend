@@ -214,7 +214,7 @@ def add_teacher():
 
         class_update = {
             "$addToSet": {
-                "teacher_ids": teacher_id  # Add teacher_id to teacher_ids (prevents duplicates)
+                "teacher_ids": ObjectId(teacher_id)  # Add teacher_id to teacher_ids (prevents duplicates)
             }
         }
         
