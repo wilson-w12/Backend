@@ -208,7 +208,7 @@ def add_teacher():
         # Match class by subject, year, and set 
         class_filter = {
             "subject": class_info['subject'],
-            "year": class_info['year'],
+            "year": int(class_info['year']),
             "set": class_info['set']
         }
 

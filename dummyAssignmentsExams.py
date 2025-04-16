@@ -29,7 +29,7 @@ subject_topics = {
 }
 
 # Connect to MongoDB
-client = MongoClient("mongodb://localhost:27017/")  
+client = MongoClient("mongodb+srv://wilsonw12:14Ts5mW4bs7H6dWO@com668class.nre7q.mongodb.net/?retryWrites=true&w=majority&appName=Com668CLASS&tls=true")
 db = client["COM668Coursework"]
 
 # Drop collections if existing

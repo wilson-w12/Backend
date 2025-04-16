@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import random, bcrypt, json
 
 # Load JSON file for names
-with open(r"C:\Users\willi\OneDrive - Ulster University\Ulster University\Ulster_Y3\COM668 Final Project\Coursework\Backend\names.json", "r") as f:
+with open(r"C:\Users\willi\OneDrive - Ulster University\Ulster University\Ulster_Y3\COM668 Final Project\COM668\backend\names.json", "r") as f:
     names_data = json.load(f)
 
 surnames = names_data["surnames_list"]
@@ -27,8 +27,8 @@ genders = ['Male', 'Female', 'Other']
 grade_scale = ["A*", "A", "B", "C"]  
 
 # Connect MongoDB
-client = MongoClient("mongodb://localhost:27017/")  
-db = client["COM668Coursework"]  
+client = MongoClient("mongodb+srv://wilsonw12:14Ts5mW4bs7H6dWO@com668class.nre7q.mongodb.net/?retryWrites=true&w=majority&appName=Com668CLASS&tls=true")
+db = client["COM668Coursework"]
 
 # Drop collections 
 db.teachers.drop()
